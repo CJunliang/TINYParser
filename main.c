@@ -8,6 +8,7 @@
 #include "globals.h"
 
 /* set NO_PARSE to TRUE to get a scanner-only compiler */
+/*将NO_PARSE设置为TRUE可获得仅扫描程序的编译器*/
 #define NO_PARSE FALSE
 
 #include "util.h"

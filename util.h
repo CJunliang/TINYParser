@@ -33,4 +33,5 @@ char *copyString(char *);
  */
 void printTree(TreeNode *);
 
+int isLegalChar(char c);
 #endif

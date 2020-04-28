@@ -12,8 +12,7 @@
 /* states in scanner DFA */
 typedef enum {
     START, INASSIGN, INCOMMENT, INNUM, INID, INGREAT, INLESS, INSTR, DONE
-}
-        StateType;
+} StateType;
 
 /* lexeme of identifier or reserved word */
 char tokenString[MAXTOKENLEN + 1];
@@ -84,9 +83,7 @@ static TokenType reservedLookup(char *s) {
     return ID;
 }
 
-
 /* Error code part **/
-
 int errorCode = 0;
 char *errorMsg[6] = {
         "Unkown error",
@@ -95,8 +92,6 @@ char *errorMsg[6] = {
         "Uncomplete string, ' expected!",
         "String can not contain RETURN",
         "Illegal character",
-
-
 };
 #define ERR_UNKOWN 0
 #define ERR_COMMENT_US 1
@@ -104,9 +99,6 @@ char *errorMsg[6] = {
 #define ERR_STRING_US 3
 #define ERR_STRING_RETURN 4
 #define ERR_CHAR_IL 5
-
-/*                 */
-
 
 /****************************************/
 /* the primary function of the scanner  */
@@ -147,7 +139,6 @@ TokenType getToken(void) {  /* index for storing into tokenString */
                     state = INCOMMENT;
                 } else {
                     state = DONE;
-
                     switch (c) {
                         case EOF:
                             save = FALSE;
@@ -190,8 +181,6 @@ TokenType getToken(void) {  /* index for storing into tokenString */
                             errorCode = ERR_UNKOWN;
                             break;
                     }
-
-
                 }
                 break;
             case INCOMMENT:
@@ -233,7 +222,6 @@ TokenType getToken(void) {  /* index for storing into tokenString */
                     currentToken = ID;
                 }
                 break;
-
             case INLESS:
                 state = DONE;
                 if (c == '=')
@@ -242,7 +230,6 @@ TokenType getToken(void) {  /* index for storing into tokenString */
                     ungetNextChar();
                     currentToken = LT;
                     save = FALSE;
-
                 }
                 break;
             case INGREAT:
@@ -255,7 +242,6 @@ TokenType getToken(void) {  /* index for storing into tokenString */
                     save = FALSE;
                 }
                 break;
-
             case INSTR:
                 if (c == '\'') {
                     currentToken = STR;

@@ -97,16 +97,9 @@ void printToken(TokenType token, const char *tokenString) {
         case STR:
             fprintf(listing, "STR,name= %s\n", tokenString);
             break;
-        case ERROR: {
-
-            fprintf(listing,
-                    "ERROR %s :%s\n", errorMsg[errorCode], tokenString);
-
-
-        }
+        case ERROR:
+            fprintf(listing, "ERROR %s :%s\n", errorMsg[errorCode], tokenString);
             break;
-
-
         default: /* should never happen */
             fprintf(listing, "Unknown token: %d\n", token);
     }
@@ -167,7 +160,7 @@ char *copyString(char *s) {
 /* Variable indentno is used by printTree to
  * store current number of spaces to indent
  */
-static indentno = 0;
+static int indentno = 0;
 
 /* macros to increase/decrease indentation */
 #define INDENT indentno+=2
@@ -233,10 +226,7 @@ void printTree(TreeNode *tree) {
     UNINDENT;
 }
 
-
 int isLegalChar(char c) {
-
-
     return (isalnum(c) ||
             isspace(c) ||
             c == '>' ||
@@ -254,6 +244,4 @@ int isLegalChar(char c) {
             c == '(' ||
             c == ')'
     );
-
-
 }

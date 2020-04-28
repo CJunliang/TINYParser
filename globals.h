@@ -26,7 +26,7 @@
 #define MAXRESERVED 18
 
 typedef enum
-    /* book-keeping tokens */
+/* book-keeping tokens */
 {
     ENDFILE, ERROR,
     /* reserved words */
@@ -36,7 +36,6 @@ typedef enum
     ID, NUM, STR,
     /* special symbols */
     ASSIGN, EQ, LT, GT, LTE, GTE, PLUS, MINUS, TIMES, OVER, LPAREN, RPAREN, SEMI, COMMA, SQM
-
 } TokenType;
 
 extern FILE *source; /* source code text file */
