@@ -88,9 +88,9 @@ int errorCode = 0;
 char *errorMsg[6] = {
         "Unkown error",
         "Uncomplete comment,} expected!",
-        "Comment error,{ unexpected!",
+        "Comment error,{ unexpected!",/*不允许嵌套*/
         "Uncomplete string, ' expected!",
-        "String can not contain RETURN",
+        "String can not contain RETURN",/*String不能换行*/
         "Illegal character",
 };
 #define ERR_UNKOWN 0
@@ -117,6 +117,7 @@ TokenType getToken(void) {  /* index for storing into tokenString */
     int save;
     while (state != DONE) {
         int c = getNextChar();
+        char ch = (char) c;
         save = TRUE;
         switch (state) {
             case START:

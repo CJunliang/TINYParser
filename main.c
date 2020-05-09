@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     listing = stdout; /* send listing to screen */
     fprintf(listing, "\nTINY COMPILATION: %s\n", pgm);
 #if NO_PARSE
-    while (getToken()!=ENDFILE);
+    while (getToken() != ENDFILE);
 #else
     syntaxTree = parse();
     if (TraceParse) {
@@ -61,7 +61,6 @@ int main(int argc, char *argv[]) {
     }
 #endif
     fclose(source);
-    system("pause");
     return 0;
 }
 

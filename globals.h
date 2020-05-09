@@ -75,9 +75,9 @@ typedef struct treeNode {
         ExpKind exp;
     } kind;
     union {
-        TokenType op;
-        int val;
-        char *name;
+        TokenType op;/*操作类型*/
+        int val;/*常熟*/
+        char *name;/*ID名称*/
     } attr;
     ExpType type; /* for type checking of exps */
 } TreeNode;

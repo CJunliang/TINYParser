@@ -55,7 +55,6 @@ void printToken(TokenType token, const char *tokenString) {
         case GTE:
             fprintf(listing, ">=\n");
             break;
-
         case LPAREN:
             fprintf(listing, "(\n");
             break;
@@ -107,6 +106,8 @@ void printToken(TokenType token, const char *tokenString) {
 
 /* Function newStmtNode creates a new statement
  * node for syntax tree construction
+ * 函数newStmtNode创建一个新语句节点，用于语法树构建
+ * IfK, RepeatK, AssignK, ReadK, WriteK
  */
 TreeNode *newStmtNode(StmtKind kind) {
     TreeNode *t = (TreeNode *) malloc(sizeof(TreeNode));
@@ -125,6 +126,8 @@ TreeNode *newStmtNode(StmtKind kind) {
 
 /* Function newExpNode creates a new expression 
  * node for syntax tree construction
+ * 函数newExpNode创建一个新的表达式节点以构建语法树
+ * OpK, ConstK, IdK
  */
 TreeNode *newExpNode(ExpKind kind) {
     TreeNode *t = (TreeNode *) malloc(sizeof(TreeNode));
@@ -144,6 +147,7 @@ TreeNode *newExpNode(ExpKind kind) {
 
 /* Function copyString allocates and makes a new
  * copy of an existing string
+ * 函数copyString分配并创建现有字符串的新副本
  */
 char *copyString(char *s) {
     int n;
@@ -159,6 +163,7 @@ char *copyString(char *s) {
 
 /* Variable indentno is used by printTree to
  * store current number of spaces to indent
+ * printTree使用变量indentno来存储要缩进的当前空间数
  */
 static int indentno = 0;
 
@@ -175,12 +180,15 @@ static void printSpaces(void) {
 
 /* procedure printTree prints a syntax tree to the 
  * listing file using indentation to indicate subtrees
+ * 过程printTree使用缩进将语法树打印到清单文件中，以指示子树
  */
 void printTree(TreeNode *tree) {
     int i;
+    /*增加缩进*/
     INDENT;
     while (tree != NULL) {
         printSpaces();
+        /*语句节点*/
         if (tree->nodekind == StmtK) {
             switch (tree->kind.stmt) {
                 case IfK:
@@ -203,6 +211,7 @@ void printTree(TreeNode *tree) {
                     break;
             }
         } else if (tree->nodekind == ExpK) {
+            /*表达式节点*/
             switch (tree->kind.exp) {
                 case OpK:
                     fprintf(listing, "Op: ");
@@ -219,10 +228,13 @@ void printTree(TreeNode *tree) {
                     break;
             }
         } else fprintf(listing, "Unknown node kind\n");
+        /*打印子树*/
         for (i = 0; i < MAXCHILDREN; i++)
             printTree(tree->child[i]);
+        /*让当前节点变成兄弟节点*/
         tree = tree->sibling;
     }
+    /*减少缩进*/
     UNINDENT;
 }
 
