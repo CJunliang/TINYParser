@@ -16,7 +16,15 @@ static TokenType token; /* holds current token */
 /*递归调用的函数原型*/
 static TreeNode *stmt_sequence(void);
 
+static TreeNode *declarations(void);
+
+static TreeNode *decl(void);
+
+static TreeNode *type_specifier(void);
+
 static TreeNode *statement(void);
+
+static TreeNode *varList(void);
 
 static TreeNode *if_stmt(void);
 
@@ -27,6 +35,8 @@ static TreeNode *assign_stmt(void);
 static TreeNode *read_stmt(void);
 
 static TreeNode *write_stmt(void);
+
+static TreeNode *while_stmt(void);
 
 static TreeNode *expr(void);
 
@@ -53,13 +63,81 @@ static void match(TokenType expected) {
     }
 }
 
+/*declarations->decl ; declarations | ε*/
+TreeNode *declarations(void) {
+    TreeNode *t = NULL;
+    TreeNode *p;
+    while (token == INT || token == STRING || token == BOOL) {
+        TreeNode *q;
+        if (t == NULL) {
+            t = decl();
+            p = t;
+        } else {
+            q = decl();
+            if (q != NULL) {
+                p->sibling = q;
+                p = q;
+            }
+        }
+        match(SEMI);
+    }
+    return t;
+}
+
+/*decl->type-specifier varlist*/
+TreeNode *decl(void) {
+    TreeNode *t = NULL;
+    t = type_specifier();
+    if (t != NULL)
+        t->child[0] = varList();
+    return t;
+}
+
+/*PARSE+    type_specifier->int | bool | string */
+TreeNode *type_specifier(void) {
+    TreeNode *t = newExpNode(TypeK);
+    switch (token) {
+        case INT:
+            t->attr.name = "int";
+            match(INT);
+            break;
+        case BOOL:
+            t->attr.name = "bool";
+            match(BOOL);
+            break;
+        case STRING:
+            t->attr.name = "string";
+            match(STRING);
+            break;
+        default:
+            syntaxError("unexpected token -> ");
+            printToken(token, tokenString);
+            token = getToken();
+            break;
+    }
+    return t;
+}
+
+/*PARSE+    varList->id(,id)**/
+TreeNode *varList(void) {
+    TreeNode *t = newExpNode(IdK);
+    if ((t != NULL) && (token == ID))
+        t->attr.name = copyString(tokenString);
+    match(ID);
+    if (token == COMMA) {
+        match(COMMA);
+        t->child[0] = varList();
+    }
+    return t;
+}
+
 /*stmt_sequence->stmt_sequence ; stmt | stmt
  * stmt_sequence=stmt(stmt_sequence ;)* */
 TreeNode *stmt_sequence(void) {
     TreeNode *t = statement();
     TreeNode *p = t;
     while ((token != ENDFILE) && (token != END) &&
-            (token != ELSE) && (token != UNTIL)) {
+           (token != ELSE) && (token != UNTIL) && (token != WHILE)) {
         TreeNode *q;
         match(SEMI);
         q = statement();
@@ -75,7 +153,7 @@ TreeNode *stmt_sequence(void) {
     return t;
 }
 
-/*statement->if_stmt|repeat_stmt|assign_stmt|read_stmt|write_stmt*/
+/*statement->if_stmt | repeat_stmt | assign_stmt | read_stmt | write_stmt*/
 TreeNode *statement(void) {
     TreeNode *t = NULL;
     switch (token) {
@@ -93,6 +171,9 @@ TreeNode *statement(void) {
             break;
         case WRITE :
             t = write_stmt();
+            break;
+        case DO:
+            t = while_stmt();
             break;
         default :
             syntaxError("unexpected token -> ");
@@ -157,11 +238,22 @@ TreeNode *write_stmt(void) {
     return t;
 }
 
+/*PARSE+
+ * while_stmt->do stmt_sequence while bool_exp*/
+TreeNode *while_stmt(void) {
+    TreeNode *t = newStmtNode(WhileK);
+    match(DO);
+    if (t != NULL) t->child[0] = stmt_sequence();
+    match(WHILE);
+    if (t != NULL) t->child[1] = expr();
+    return t;
+}
+
 /*expr->simple_exp cop(< =) simple_exp | simple_exp
  * expr=simple_exp (cop simple_exp)* */
 TreeNode *expr(void) {
     TreeNode *t = simple_exp();
-    if ((token == LT) || (token == EQ)) {
+    if ((token == LT) || (token == EQ) || (token == GT) || (token == LTE) || (token == GTE)) {
         TreeNode *p = newExpNode(OpK);
         if (p != NULL) {
             p->child[0] = t;
@@ -215,11 +307,17 @@ TreeNode *factor(void) {
     TreeNode *t = NULL;
     switch (token) {
         case NUM :
-            t = newExpNode(ConstK);
+            t = newExpNode(ConstNumK);
             /*atoi函数将字符串转换成数字*/
             if ((t != NULL) && (token == NUM))
                 t->attr.val = atoi(tokenString);
             match(NUM);
+            break;
+        case STR:
+            t = newExpNode(ConstStrK);
+            if ((t != NULL) && (token == STR))
+                t->attr.string = copyString(tokenString);
+            match(STR);
             break;
         case ID :
             t = newExpNode(IdK);
@@ -250,10 +348,12 @@ TreeNode *factor(void) {
  * constructed syntax tree
  */
 TreeNode *parse(void) {
-    TreeNode *t;
+    TreeNode *t = newExpNode(ConstStrK);
+    t->attr.string = "Program";
     /*初始化token*/
     token = getToken();
-    t = stmt_sequence();
+    t->child[0] = declarations();
+    t->child[1] = stmt_sequence();
     if (token != ENDFILE)
         syntaxError("Code ends before file\n");
     return t;

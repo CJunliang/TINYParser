@@ -52,13 +52,14 @@ typedef enum {
     StmtK, ExpK
 } NodeKind;
 typedef enum {
-    IfK, RepeatK, AssignK, ReadK, WriteK
+    IfK, RepeatK, AssignK, ReadK, WriteK, WhileK
 } StmtKind;
 typedef enum {
-    OpK, ConstK, IdK
+    OpK, ConstNumK, IdK, TypeK, ConstStrK,
 } ExpKind;
 
-/* ExpType is used for type checking */
+/* ExpType is used for type checking
+ * ExpType用于类型检查*/
 typedef enum {
     Void, Integer, Boolean
 } ExpType;
@@ -76,10 +77,12 @@ typedef struct treeNode {
     } kind;
     union {
         TokenType op;/*操作类型*/
-        int val;/*常熟*/
+        TokenType type;/*数据类型*/
+        int val;/*常数*/
         char *name;/*ID名称*/
+        char *string;/*str*/
     } attr;
-    ExpType type; /* for type checking of exps */
+    ExpType type; /* for type checking of exps 用于exp的类型检查*/
 } TreeNode;
 
 /**************************************************/

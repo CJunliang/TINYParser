@@ -39,7 +39,6 @@ void printToken(TokenType token, const char *tokenString) {
         case ASSIGN:
             fprintf(listing, ":=\n");
             break;
-
         case LT:
             fprintf(listing, "<\n");
             break;
@@ -94,10 +93,10 @@ void printToken(TokenType token, const char *tokenString) {
                     "ID, name= %s\n", tokenString);
             break;
         case STR:
-            fprintf(listing, "STR,name= %s\n", tokenString);
+            fprintf(listing, "STR, name= %s\n", tokenString);
             break;
         case ERROR:
-            fprintf(listing, "ERROR %s :%s\n", errorMsg[errorCode], tokenString);
+            fprintf(listing, "ERROR %s: %s\n", errorMsg[errorCode], tokenString);
             break;
         default: /* should never happen */
             fprintf(listing, "Unknown token: %d\n", token);
@@ -206,8 +205,11 @@ void printTree(TreeNode *tree) {
                 case WriteK:
                     fprintf(listing, "Write\n");
                     break;
+                case WhileK:
+                    fprintf(listing, "While\n");
+                    break;
                 default:
-                    fprintf(listing, "Unknown ExpNode kind\n");
+                    fprintf(listing, "Unknown StmtNode kind\n");
                     break;
             }
         } else if (tree->nodekind == ExpK) {
@@ -217,8 +219,17 @@ void printTree(TreeNode *tree) {
                     fprintf(listing, "Op: ");
                     printToken(tree->attr.op, "\0");
                     break;
-                case ConstK:
-                    fprintf(listing, "Const: %d\n", tree->attr.val);
+                case TypeK:
+                    fprintf(listing, "Type: %s\n", tree->attr.name);
+                    break;
+                case ConstNumK:
+                    fprintf(listing, "Const Integer: %d\n", tree->attr.val);
+                    break;
+                case ConstStrK:
+                    if (strcmp(tree->attr.string, "Program") == 0)
+                        fprintf(listing, "%s\n", tree->attr.string);
+                    else
+                        fprintf(listing, "Const String: %s\n", tree->attr.string);
                     break;
                 case IdK:
                     fprintf(listing, "Id: %s\n", tree->attr.name);
