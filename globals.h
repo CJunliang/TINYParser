@@ -51,9 +51,12 @@ extern int lineno; /* source line number for listing */
 typedef enum {
     StmtK, ExpK
 } NodeKind;
+/*需要多添加WhileK来识别while循环*/
 typedef enum {
     IfK, RepeatK, AssignK, ReadK, WriteK, WhileK
 } StmtKind;
+/*删除ConstK，用ConstNumK来识别常数，用ConstStrK来识别字符串
+ * 用TypeK来识别数据类型*/
 typedef enum {
     OpK, ConstNumK, IdK, TypeK, ConstStrK,
 } ExpKind;
@@ -76,6 +79,7 @@ typedef struct treeNode {
         ExpKind exp;
     } kind;
     union {
+        /*新添加type，name和string用来记录数据类型，ID名称和字符串*/
         TokenType op;/*操作类型*/
         TokenType type;/*数据类型*/
         int val;/*常数*/

@@ -206,6 +206,7 @@ void printTree(TreeNode *tree) {
                     fprintf(listing, "Write\n");
                     break;
                 case WhileK:
+                    /*新添加WhileK来输出do-while语句*/
                     fprintf(listing, "While\n");
                     break;
                 default:
@@ -220,13 +221,17 @@ void printTree(TreeNode *tree) {
                     printToken(tree->attr.op, "\0");
                     break;
                 case TypeK:
+                    /*输出数据类型*/
                     fprintf(listing, "Type: %s\n", tree->attr.name);
                     break;
                 case ConstNumK:
+                    /*输出常数*/
                     fprintf(listing, "Const Integer: %d\n", tree->attr.val);
                     break;
                 case ConstStrK:
+                    /*输出字符串*/
                     if (strcmp(tree->attr.string, "Program") == 0)
+                        /*输出Program*/
                         fprintf(listing, "%s\n", tree->attr.string);
                     else
                         fprintf(listing, "Const String: %s\n", tree->attr.string);

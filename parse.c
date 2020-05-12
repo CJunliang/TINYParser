@@ -22,9 +22,9 @@ static TreeNode *decl(void);
 
 static TreeNode *type_specifier(void);
 
-static TreeNode *statement(void);
-
 static TreeNode *varList(void);
+
+static TreeNode *statement(void);
 
 static TreeNode *if_stmt(void);
 
@@ -63,37 +63,46 @@ static void match(TokenType expected) {
     }
 }
 
-/*declarations->decl ; declarations | ε*/
+/*declarations->decl ; declarations | ε
+ * 声明语句*/
 TreeNode *declarations(void) {
     TreeNode *t = NULL;
     TreeNode *p;
+    /*当token是int或string或bool时说明该语句是声明语句*/
     while (token == INT || token == STRING || token == BOOL) {
         TreeNode *q;
         if (t == NULL) {
+            /*t等于null说明此时是第一条声明语句*/
             t = decl();
             p = t;
         } else {
+            /*此时非第一条声明语句，需要不断挂靠在兄弟节点上*/
             q = decl();
             if (q != NULL) {
                 p->sibling = q;
                 p = q;
             }
         }
+        /*匹配分号*/
         match(SEMI);
     }
     return t;
 }
 
-/*decl->type-specifier varlist*/
+/*decl->type-specifier varlist
+ * 声明语句*/
 TreeNode *decl(void) {
     TreeNode *t = NULL;
+    /*变量类型*/
     t = type_specifier();
+    /*变量*/
     if (t != NULL)
         t->child[0] = varList();
     return t;
 }
 
-/*PARSE+    type_specifier->int | bool | string */
+/*PARSE+    type_specifier->int | bool | string
+ * 变量类型，只能匹配int、bool和string*/
 TreeNode *type_specifier(void) {
     TreeNode *t = newExpNode(TypeK);
     switch (token) {
@@ -118,29 +127,36 @@ TreeNode *type_specifier(void) {
     return t;
 }
 
-/*PARSE+    varList->id(,id)**/
+/*PARSE+    varList->id(,id)*
+ * 变量*/
 TreeNode *varList(void) {
     TreeNode *t = newExpNode(IdK);
+    /*当token是ID时*/
     if ((t != NULL) && (token == ID))
         t->attr.name = copyString(tokenString);
     match(ID);
+    /*当token为逗号时，说明声明语句不止一个变量*/
     if (token == COMMA) {
         match(COMMA);
+        /*将变量挂靠在前一个变量的兄弟节点*/
         t->child[0] = varList();
     }
     return t;
 }
 
 /*stmt_sequence->stmt_sequence ; stmt | stmt
- * stmt_sequence=stmt(stmt_sequence ;)* */
+ * stmt_sequence=stmt(stmt_sequence ;)*
+ * 在这里改变了产生式为stmt_sequence->stmt;stmt_sequence|stmt;*/
 TreeNode *stmt_sequence(void) {
     TreeNode *t = statement();
+    match(SEMI);
     TreeNode *p = t;
+    /*需要加一个token!=while*/
     while ((token != ENDFILE) && (token != END) &&
            (token != ELSE) && (token != UNTIL) && (token != WHILE)) {
         TreeNode *q;
-        match(SEMI);
         q = statement();
+        match(SEMI);
         if (q != NULL) {
             if (t == NULL) t = p = q;
             else /* now p cannot be NULL either */
@@ -173,6 +189,7 @@ TreeNode *statement(void) {
             t = write_stmt();
             break;
         case DO:
+            /*do-while语句*/
             t = while_stmt();
             break;
         default :
@@ -238,8 +255,8 @@ TreeNode *write_stmt(void) {
     return t;
 }
 
-/*PARSE+
- * while_stmt->do stmt_sequence while bool_exp*/
+/* while_stmt->do stmt_sequence while bool_exp
+ * do-while语句 */
 TreeNode *while_stmt(void) {
     TreeNode *t = newStmtNode(WhileK);
     match(DO);
@@ -253,6 +270,7 @@ TreeNode *while_stmt(void) {
  * expr=simple_exp (cop simple_exp)* */
 TreeNode *expr(void) {
     TreeNode *t = simple_exp();
+    /*除了<,=外，还需要加上>,<=,>=*/
     if ((token == LT) || (token == EQ) || (token == GT) || (token == LTE) || (token == GTE)) {
         TreeNode *p = newExpNode(OpK);
         if (p != NULL) {
@@ -314,6 +332,7 @@ TreeNode *factor(void) {
             match(NUM);
             break;
         case STR:
+            /*当token是str时，说明该值是字符串*/
             t = newExpNode(ConstStrK);
             if ((t != NULL) && (token == STR))
                 t->attr.string = copyString(tokenString);
@@ -348,11 +367,14 @@ TreeNode *factor(void) {
  * constructed syntax tree
  */
 TreeNode *parse(void) {
+    /*输出Program*/
     TreeNode *t = newExpNode(ConstStrK);
     t->attr.string = "Program";
     /*初始化token*/
     token = getToken();
+    /*t的child0是声明语句*/
     t->child[0] = declarations();
+    /*t的child1是其他语句*/
     t->child[1] = stmt_sequence();
     if (token != ENDFILE)
         syntaxError("Code ends before file\n");
