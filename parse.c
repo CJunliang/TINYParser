@@ -93,7 +93,7 @@ TreeNode *declarations(void) {
  * 声明语句*/
 TreeNode *decl(void) {
     TreeNode *t = NULL;
-    /*变量类型*/
+    /*数据类型*/
     t = type_specifier();
     /*变量*/
     if (t != NULL)
@@ -324,19 +324,31 @@ TreeNode *term(void) {
 TreeNode *factor(void) {
     TreeNode *t = NULL;
     switch (token) {
-        case NUM :
-            t = newExpNode(ConstNumK);
-            /*atoi函数将字符串转换成数字*/
-            if ((t != NULL) && (token == NUM))
-                t->attr.val = atoi(tokenString);
-            match(NUM);
-            break;
         case STR:
             /*当token是str时，说明该值是字符串*/
             t = newExpNode(ConstStrK);
             if ((t != NULL) && (token == STR))
                 t->attr.string = copyString(tokenString);
             match(STR);
+            break;
+        case T_TRUE:
+            /*识别bool类型的true*/
+            t = newExpNode(BoolK);
+            if ((t != NULL) && (token == T_TRUE))t->attr.string = copyString(tokenString);
+            match(T_TRUE);
+            break;
+        case T_FALSE:
+            /*识别bool类型的false*/
+            t = newExpNode(BoolK);
+            if ((t != NULL) && (token == T_FALSE))t->attr.string = copyString(tokenString);
+            match(T_FALSE);
+            break;
+        case NUM :
+            t = newExpNode(ConstNumK);
+            /*atoi函数将字符串转换成数字*/
+            if ((t != NULL) && (token == NUM))
+                t->attr.val = atoi(tokenString);
+            match(NUM);
             break;
         case ID :
             t = newExpNode(IdK);

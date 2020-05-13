@@ -51,14 +51,14 @@ extern int lineno; /* source line number for listing */
 typedef enum {
     StmtK, ExpK
 } NodeKind;
-/*需要多添加WhileK来识别while循环*/
+/*需要添加WhileK来识别while循环*/
 typedef enum {
     IfK, RepeatK, AssignK, ReadK, WriteK, WhileK
 } StmtKind;
 /*删除ConstK，用ConstNumK来识别常数，用ConstStrK来识别字符串
- * 用TypeK来识别数据类型*/
+ * 用TypeK来识别数据类型，BoolK来识别bool变量*/
 typedef enum {
-    OpK, ConstNumK, IdK, TypeK, ConstStrK,
+    OpK, ConstNumK, IdK, TypeK, ConstStrK, BoolK
 } ExpKind;
 
 /* ExpType is used for type checking
@@ -79,11 +79,10 @@ typedef struct treeNode {
         ExpKind exp;
     } kind;
     union {
-        /*新添加type，name和string用来记录数据类型，ID名称和字符串*/
+        /*新添加name和string用来记录数据类型，ID名称和字符串*/
         TokenType op;/*操作类型*/
-        TokenType type;/*数据类型*/
         int val;/*常数*/
-        char *name;/*ID名称*/
+        char *name;/*ID名称或数据类型*/
         char *string;/*str*/
     } attr;
     ExpType type; /* for type checking of exps 用于exp的类型检查*/

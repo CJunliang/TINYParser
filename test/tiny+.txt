@@ -5,5 +5,5 @@ string D;
 D:= 'scanner';
 C:=A + B;
 do 
-A:=A*2
-while A<=D
+A:=A*2;
+while A<=D;
