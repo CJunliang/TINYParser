@@ -6,11 +6,18 @@
 #include "globals.h"
 #include "translate.h"
 #include "util.h"
+#include "string.h"
 
 #define LENGTH 300
 Quadruple quadruples[LENGTH];
 static int curIndex = 0;
 static int variableNum = 0;
+
+void initRetStruct(RetStruct *retStruct) {
+    retStruct->trueList = NULL;
+    retStruct->falseList = NULL;
+    retStruct->str = NULL;
+};
 
 char *intToChar(int num) {
     char *str = malloc(10);
@@ -52,18 +59,24 @@ QuaLinkList *makeList(int i) {
 }
 
 QuaLinkList *merge(QuaLinkList *list1, QuaLinkList *list2) {
-    while (list1->next != NULL)
-        list1 = list1->next;
-    list1->next = list2;
-    return list1;
+    if (list1 != NULL) {
+        while (list1->next != NULL)
+            list1 = list1->next;
+        list1->next = list2;
+        return list1;
+    }
+    return list2;
 }
 
 void backPatch(QuaLinkList *list, int target) {
     int index;
+    QuaLinkList *temp;
     while (list != NULL) {
         index = list->index;
         quadruples[index].result = intToChar(target);
+        temp = list;
         list = list->next;
+        free(temp);
     }
 }
 
@@ -84,8 +97,8 @@ void codeGen(TreeNode *syntaxTree, char *codeFile) {
     emitComment("End of execution.");
 }
 
-char *cGen(TreeNode *tree) {
-    char *ret = NULL;
+RetStruct *cGen(TreeNode *tree) {
+    RetStruct *ret = NULL;
     if (tree != NULL) {
         switch (tree->nodekind) {
             case StmtK:
@@ -105,54 +118,60 @@ char *cGen(TreeNode *tree) {
 
 void genStmt(TreeNode *tree) {
     int true, false, end;
-    char *result;
-    QuaLinkList *endList, *falseList;
+    RetStruct *re;
+    QuaLinkList *endList;
     switch (tree->kind.stmt) {
         case IfK:
-            cGen(tree->child[0]);
-            true = curIndex + 2;
-            result = quadruples[curIndex - 1].result;
-            addQuadruple("je", result, "true", intToChar(true));
-            addQuadruple("jump", NULL, NULL, NULL);
-            falseList = makeList(curIndex - 1);
-            cGen(tree->child[1]);
-            false = curIndex;
+            re = cGen(tree->child[0]);
             if (tree->child[2] != NULL) {
+                backPatch(re->trueList, curIndex);
+                cGen(tree->child[1]);
                 addQuadruple("jump", NULL, NULL, NULL);
                 endList = makeList(curIndex - 1);
-                false = curIndex;
-                backPatch(falseList, false);
+//                false = curIndex;
+                backPatch(re->falseList, curIndex);
                 cGen(tree->child[2]);
                 end = curIndex;
                 backPatch(endList, end);
             } else {
-                backPatch(falseList, false);
+                backPatch(re->trueList, curIndex);
+                cGen(tree->child[1]);
+                backPatch(re->falseList, curIndex);
             }
             break;
         case RepeatK:
             true = curIndex;
             cGen(tree->child[0]);
-            cGen(tree->child[1]);
-            result = quadruples[curIndex - 1].result;
-            addQuadruple("je", result, "true", intToChar(true));
+            re = cGen(tree->child[1]);
+            backPatch(re->trueList, true);
+            backPatch(re->falseList, curIndex);
             break;
         case AssignK:
-            result = cGen(tree->child[0]);
-            addQuadruple(":=", result, NULL, tree->attr.name);
+            re = cGen(tree->child[0]);
+            if (tree->child[0]->nodekind == BoolK) {
+                addQuadruple(":=", re->str, NULL, tree->attr.name);
+            } else if (re->falseList != NULL || re->trueList != NULL) {
+                backPatch(re->trueList, curIndex);
+                addQuadruple(":=", "true", NULL, tree->attr.name);
+                addQuadruple("j", NULL, NULL, intToChar(curIndex + 2));
+                backPatch(re->falseList, curIndex);
+                addQuadruple(":=", "false", NULL, tree->attr.name);
+            } else
+                addQuadruple(":=", re->str, NULL, tree->attr.name);
             break;
         case ReadK:
             addQuadruple("IN", NULL, NULL, tree->attr.name);
             break;
         case WriteK:
-            result = cGen(tree->child[0]);
-            addQuadruple("OUT", NULL, NULL, result);
+            re = cGen(tree->child[0]);
+            addQuadruple("OUT", NULL, NULL, re->str);
             break;
         case WhileK:
             true = curIndex;
             cGen(tree->child[0]);
-            cGen(tree->child[1]);
-            result = quadruples[curIndex - 1].result;
-            addQuadruple("je", result, "tree", intToChar(true));
+            re = cGen(tree->child[1]);
+            backPatch(re->trueList, true);
+            backPatch(re->falseList, curIndex);
             break;
         case TypeK:
         default:
@@ -160,70 +179,107 @@ void genStmt(TreeNode *tree) {
     }
 }
 
-char *genExp(TreeNode *tree) {
+RetStruct *genExp(TreeNode *tree) {
     TreeNode *node1, *node2;
-    char *arg1, *arg2;
-    char *ret = NULL;
+    int index;
+    RetStruct *re1, *re2;
+    QuaLinkList *trueList, *falseList;
+    RetStruct *retStruct = (RetStruct *) malloc(sizeof(RetStruct));
+    initRetStruct(retStruct);
     switch (tree->kind.exp) {
         case OpK:
             node1 = tree->child[0];
             node2 = tree->child[1];
-            arg1 = cGen(node1);
-            arg2 = cGen(node2);
+            re1 = cGen(node1);
+            index = curIndex;
+            re2 = cGen(node2);
             switch (tree->attr.op) {
                 case OR:
-                    addQuadruple("or", arg1, arg2, newVar());
+                    backPatch(re1->falseList, index);
+                    retStruct->trueList = merge(re1->trueList, re2->trueList);
+                    retStruct->falseList = re2->falseList;
                     break;
                 case AND:
-                    addQuadruple("and", arg1, arg2, newVar());
+                    backPatch(re1->trueList, index);
+                    retStruct->trueList = re2->trueList;
+                    retStruct->falseList = merge(re1->falseList, re2->falseList);
                     break;
                 case NOT:
-                    addQuadruple("not", arg1, NULL, newVar());
+                    retStruct->trueList = re1->falseList;
+                    retStruct->falseList = re1->trueList;
                     break;
                 case EQ:
-                    addQuadruple("=", arg1, arg2, newVar());
+                    retStruct->trueList = makeList(curIndex);
+                    retStruct->falseList = makeList(curIndex + 1);
+                    addQuadruple("j=", re1->str, re2->str, NULL);
+                    addQuadruple("j", NULL, NULL, NULL);
                     break;
                 case LT:
-                    addQuadruple("<", arg1, arg2, newVar());
+                    retStruct->trueList = makeList(curIndex);
+                    retStruct->falseList = makeList(curIndex + 1);
+                    addQuadruple("j<", re1->str, re2->str, NULL);
+                    addQuadruple("j", NULL, NULL, NULL);
                     break;
                 case GT:
-                    addQuadruple(">", arg1, arg2, newVar());
+                    retStruct->trueList = makeList(curIndex);
+                    retStruct->falseList = makeList(curIndex + 1);
+                    addQuadruple("j>", re1->str, re2->str, NULL);
+                    addQuadruple("j", NULL, NULL, NULL);
                     break;
                 case LTE:
-                    addQuadruple("<=", arg1, arg2, newVar());
+                    retStruct->trueList = makeList(curIndex);
+                    retStruct->falseList = makeList(curIndex + 1);
+                    addQuadruple("j<=", re1->str, re2->str, NULL);
+                    addQuadruple("j", NULL, NULL, NULL);
                     break;
                 case GTE:
-                    addQuadruple(">=", arg1, arg2, newVar());
+                    retStruct->trueList = makeList(curIndex);
+                    retStruct->falseList = makeList(curIndex + 1);
+                    addQuadruple("j>=", re1->str, re2->str, NULL);
+                    addQuadruple("j", NULL, NULL, NULL);
                     break;
                 case PLUS:
-                    addQuadruple("plus", arg1, arg2, newVar());
+                    addQuadruple("plus", re1->str, re2->str, newVar());
                     break;
                 case MINUS:
-                    addQuadruple("minus", arg1, arg2, newVar());
+                    addQuadruple("minus", re1->str, re2->str, newVar());
                     break;
                 case TIMES:
-                    addQuadruple("times", arg1, arg2, newVar());
+                    addQuadruple("times", re1->str, re2->str, newVar());
                     break;
                 case OVER:
-                    addQuadruple("over", arg1, arg2, newVar());
+                    addQuadruple("over", re1->str, re2->str, newVar());
                     break;
                 default:
                     break;
             }
-            ret = quadruples[curIndex - 1].result;
+            retStruct->str = quadruples[curIndex - 1].result;
+            if (re1 != NULL)
+                free(re1);
+            if (re2 != NULL)
+                free(re2);
             break;
         case ConstNumK:
-            ret = intToChar(tree->attr.val);
+            retStruct->str = intToChar(tree->attr.val);
             break;
         case ConstStrK:
+            retStruct->str = tree->attr.string;
+            break;
         case BoolK:
-            ret = tree->attr.string;
+            if (strcmp(tree->attr.string, "true") == 0) {
+                retStruct->trueList = makeList(curIndex);
+                retStruct->str = "true";
+            } else {
+                retStruct->falseList = makeList(curIndex);
+                retStruct->str = "false";
+            }
+            addQuadruple("j", NULL, NULL, NULL);
             break;
         case IdK:
-            ret = tree->attr.name;
+            retStruct->str = tree->attr.name;
             break;
         default:
             break;
     }
-    return ret;
+    return retStruct;
 }

@@ -6,7 +6,7 @@
 #include <string.h>
 #include "symtab.h"
 
-static int hash(const char *key) {
+int hash(char *key) {
     int temp = 0;
     int i = 0;
     while (key[i] != '\0') {

@@ -19,6 +19,12 @@ typedef struct quaLinkList {
     struct quaLinkList *next;
 } QuaLinkList;
 
+typedef struct retStruct {
+    QuaLinkList *trueList;
+    QuaLinkList *falseList;
+    char *str;
+} RetStruct;
+
 /*添加一个四元组*/
 void addQuadruple(char *operator, char *arg1, char *arg2, char *result);
 
@@ -35,12 +41,12 @@ void backPatch(QuaLinkList *list, int target);
 void codeGen(TreeNode *syntaxTree, char *codeFile);
 
 /*根据节点类型的不同来使用不同的函数来遍历语法树*/
-char *cGen(TreeNode *tree);
+RetStruct *cGen(TreeNode *tree);
 
 /*遍历语句*/
 void genStmt(TreeNode *tree);
 
 /*遍历表达式*/
-char *genExp(TreeNode *tree);
+RetStruct *genExp(TreeNode *tree);
 
 #endif //TINY_TRANSLATE_H

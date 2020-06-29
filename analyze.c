@@ -13,6 +13,7 @@ void insertNode(TreeNode *t) {
     switch (t->nodekind) {
         case StmtK:
             switch (t->kind.stmt) {
+                case AssignK:
                 case ReadK:
                     if (symTabLookUp(t->attr.name) == -1)
                         symTabInsert(t->attr.name, t->lineno, location++);
@@ -20,7 +21,6 @@ void insertNode(TreeNode *t) {
                         symTabInsert(t->attr.name, t->lineno, 0);
                     break;
                 case WriteK:
-                case AssignK:
                 case IfK:
                 case RepeatK:
                 case WhileK:
