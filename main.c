@@ -12,6 +12,8 @@
 #define NO_PARSE FALSE
 
 #include "util.h"
+#include "analyze.h"
+#include "translate.h"
 
 #if NO_PARSE
 #include "scan.h"
@@ -31,6 +33,8 @@ FILE *code;
 int EchoSource = TRUE;
 int TraceScan = TRUE;
 int TraceParse = TRUE;
+int TraceAnalyze = TRUE;
+int TraceCode = TRUE;
 
 int Error = FALSE;
 
@@ -60,6 +64,30 @@ int main(int argc, char *argv[]) {
         printTree(syntaxTree);
     }
 #endif
+    if (!Error) {
+        if (TraceAnalyze)
+            fprintf(listing, "\nBuilding Symbol Table...\n");
+        buildSymTab(syntaxTree);
+        /*if (TraceAnalyze)
+            fprintf(listing, "\nChecking Types...\n");
+        typeCheck(syntaxTree);
+        if (TraceAnalyze)
+            fprintf(listing, "\nType Checking Finished\n");*/
+    }
+    if (!Error) {
+        char *codeFile;
+        int fnlen = strcspn(pgm, ".");
+        codeFile = (char *) calloc(fnlen + 4, sizeof(char));
+        strncpy(codeFile, pgm, fnlen);
+        strcat(codeFile, ".tm");
+        code = fopen(codeFile, "w");
+        if (code == NULL) {
+            printf("Unable to open %s\n", codeFile);
+            exit(1);
+        }
+        codeGen(syntaxTree, codeFile);
+        fclose(code);
+    }
     fclose(source);
     return 0;
 }

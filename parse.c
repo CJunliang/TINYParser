@@ -46,6 +46,17 @@ static TreeNode *term(void);
 
 static TreeNode *factor(void);
 
+static TreeNode *andTerm(void);
+
+static TreeNode *orTerm(void);
+
+static TreeNode *notTerm(void);
+
+static TreeNode *boolFactor(void);
+
+/*判断是否是正则运算还是布尔运算，1时代表正则，0代表布尔*/
+static int inExp = 0;
+
 /*输出语法错误*/
 static void syntaxError(char *message) {
     fprintf(listing, "\n>>> ");
@@ -104,7 +115,7 @@ TreeNode *decl(void) {
 /*PARSE+    type_specifier->int | bool | string
  * 变量类型，只能匹配int、bool和string*/
 TreeNode *type_specifier(void) {
-    TreeNode *t = newExpNode(TypeK);
+    TreeNode *t = newStmtNode(TypeK);
     switch (token) {
         case INT:
             t->attr.name = "int";
@@ -156,7 +167,9 @@ TreeNode *stmt_sequence(void) {
            (token != ELSE) && (token != UNTIL) && (token != WHILE)) {
         TreeNode *q;
         q = statement();
-        match(SEMI);
+        if (token != ENDFILE)
+            match(SEMI);
+        else break;
         if (q != NULL) {
             if (t == NULL) t = p = q;
             else /* now p cannot be NULL either */
@@ -205,7 +218,7 @@ TreeNode *statement(void) {
 TreeNode *if_stmt(void) {
     TreeNode *t = newStmtNode(IfK);
     match(IF);
-    if (t != NULL) t->child[0] = expr();
+    if (t != NULL) t->child[0] = orTerm();
     match(THEN);
     if (t != NULL) t->child[1] = stmt_sequence();
     if (token == ELSE) {
@@ -222,7 +235,7 @@ TreeNode *repeat_stmt(void) {
     match(REPEAT);
     if (t != NULL) t->child[0] = stmt_sequence();
     match(UNTIL);
-    if (t != NULL) t->child[1] = expr();
+    t->child[1] = expr();
     return t;
 }
 
@@ -233,7 +246,25 @@ TreeNode *assign_stmt(void) {
         t->attr.name = copyString(tokenString);
     match(ID);
     match(ASSIGN);
-    if (t != NULL) t->child[0] = expr();
+    if (t != NULL) {
+        switch (token) {
+            case STR:
+                /*当token是str时，说明该值是字符串*/
+                t->child[0] = newExpNode(ConstStrK);
+                if ((t != NULL) && (token == STR))
+                    t->child[0]->attr.string = copyString(tokenString);
+                match(STR);
+                break;
+            case NUM:
+            case ID:
+            case T_TRUE:
+            case T_FALSE:
+                t->child[0] = orTerm();
+                break;
+            default:
+                break;
+        }
+    }
     return t;
 }
 
@@ -251,7 +282,11 @@ TreeNode *read_stmt(void) {
 TreeNode *write_stmt(void) {
     TreeNode *t = newStmtNode(WriteK);
     match(WRITE);
-    if (t != NULL) t->child[0] = expr();
+    if (t != NULL) {
+        inExp = 1;
+        t->child[0] = simple_exp();
+        inExp = 0;
+    }
     return t;
 }
 
@@ -262,7 +297,7 @@ TreeNode *while_stmt(void) {
     match(DO);
     if (t != NULL) t->child[0] = stmt_sequence();
     match(WHILE);
-    if (t != NULL) t->child[1] = expr();
+    if (t != NULL) t->child[1] = orTerm();
     return t;
 }
 
@@ -324,25 +359,6 @@ TreeNode *term(void) {
 TreeNode *factor(void) {
     TreeNode *t = NULL;
     switch (token) {
-        case STR:
-            /*当token是str时，说明该值是字符串*/
-            t = newExpNode(ConstStrK);
-            if ((t != NULL) && (token == STR))
-                t->attr.string = copyString(tokenString);
-            match(STR);
-            break;
-        case T_TRUE:
-            /*识别bool类型的true*/
-            t = newExpNode(BoolK);
-            if ((t != NULL) && (token == T_TRUE))t->attr.string = copyString(tokenString);
-            match(T_TRUE);
-            break;
-        case T_FALSE:
-            /*识别bool类型的false*/
-            t = newExpNode(BoolK);
-            if ((t != NULL) && (token == T_FALSE))t->attr.string = copyString(tokenString);
-            match(T_FALSE);
-            break;
         case NUM :
             t = newExpNode(ConstNumK);
             /*atoi函数将字符串转换成数字*/
@@ -359,9 +375,79 @@ TreeNode *factor(void) {
         case LPAREN :
             /*左括号(*/
             match(LPAREN);
-            t = expr();
+            if (inExp == 1)
+                t = simple_exp();
+            else
+                t = expr();
             /*右括号)*/
             match(RPAREN);
+            break;
+        default:
+            syntaxError("unexpected token -> ");
+            printToken(token, tokenString);
+            token = getToken();
+            break;
+    }
+    return t;
+}
+
+TreeNode *orTerm(void) {
+    TreeNode *t = andTerm();
+    while (token == OR) {
+        TreeNode *p = newExpNode(OpK);
+        if (p != NULL) {
+            p->child[0] = t;
+            p->attr.op = token;
+            t = p;
+            match(token);
+            p->child[1] = andTerm();
+        }
+    }
+    return t;
+}
+
+TreeNode *andTerm(void) {
+    TreeNode *t = notTerm();
+    while (token == AND) {
+        TreeNode *p = newExpNode(OpK);
+        if (p != NULL) {
+            p->child[0] = t;
+            p->attr.op = token;
+            t = p;
+            match(token);
+            p->child[1] = notTerm();
+        }
+    }
+    return t;
+}
+
+TreeNode *notTerm(void) {
+    TreeNode *t = NULL;
+    switch (token) {
+        case NOT:
+            t = newExpNode(OpK);
+            t->attr.op = token;
+            match(NOT);
+            t->child[0] = notTerm();
+            break;
+        case T_TRUE:
+            t = newExpNode(BoolK);
+            if ((t != NULL) && (token == T_TRUE))t->attr.string = copyString(tokenString);
+            match(T_TRUE);
+            break;
+        case T_FALSE:
+            t = newExpNode(BoolK);
+            if ((t != NULL) && (token == T_FALSE))t->attr.string = copyString(tokenString);
+            match(T_FALSE);
+            break;
+        case LPAREN:
+            match(LPAREN);
+            t = orTerm();
+            match(RPAREN);
+            break;
+        case NUM:
+        case ID:
+            t = expr();
             break;
         default:
             syntaxError("unexpected token -> ");
@@ -379,15 +465,17 @@ TreeNode *factor(void) {
  * constructed syntax tree
  */
 TreeNode *parse(void) {
-    /*输出Program*/
-    TreeNode *t = newExpNode(ConstStrK);
-    t->attr.string = "Program";
-    /*初始化token*/
+    TreeNode *t, *p;
     token = getToken();
-    /*t的child0是声明语句*/
-    t->child[0] = declarations();
-    /*t的child1是其他语句*/
-    t->child[1] = stmt_sequence();
+    t = declarations();
+    if (t == NULL) {
+        t = stmt_sequence();
+    } else {
+        p = t;
+        while (p->sibling != NULL)
+            p = p->sibling;
+        p->sibling = stmt_sequence();
+    }
     if (token != ENDFILE)
         syntaxError("Code ends before file\n");
     return t;

@@ -53,18 +53,18 @@ typedef enum {
 } NodeKind;
 /*需要添加WhileK来识别while循环*/
 typedef enum {
-    IfK, RepeatK, AssignK, ReadK, WriteK, WhileK
+    IfK, RepeatK, AssignK, ReadK, WriteK, WhileK, TypeK
 } StmtKind;
 /*删除ConstK，用ConstNumK来识别常数，用ConstStrK来识别字符串
  * 用TypeK来识别数据类型，BoolK来识别bool变量*/
 typedef enum {
-    OpK, ConstNumK, IdK, TypeK, ConstStrK, BoolK
+    OpK, ConstNumK, IdK, ConstStrK, BoolK
 } ExpKind;
 
 /* ExpType is used for type checking
  * ExpType用于类型检查*/
 typedef enum {
-    Void, Integer, Boolean
+    Void, Integer, Boolean, String
 } ExpType;
 
 #define MAXCHILDREN 3

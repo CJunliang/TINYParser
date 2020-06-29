@@ -23,11 +23,6 @@ void printToken(TokenType token, const char *tokenString) {
         case UNTIL:
         case READ:
         case WRITE:
-        case T_TRUE:
-        case T_FALSE:
-        case OR:
-        case AND:
-        case NOT:
         case INT:
         case BOOL:
         case STRING:
@@ -35,6 +30,21 @@ void printToken(TokenType token, const char *tokenString) {
         case WHILE:
             fprintf(listing,
                     "reserved word: %s\n", tokenString);
+            break;
+        case OR:
+            fprintf(listing, "or\n");
+            break;
+        case AND:
+            fprintf(listing, "and\n");
+            break;
+        case NOT:
+            fprintf(listing, "not\n");
+            break;
+        case T_TRUE:
+            fprintf(listing, "true\n");
+            break;
+        case T_FALSE:
+            fprintf(listing, "false\n");
             break;
         case ASSIGN:
             fprintf(listing, ":=\n");
@@ -209,6 +219,10 @@ void printTree(TreeNode *tree) {
                     /*新添加WhileK来输出do-while语句*/
                     fprintf(listing, "While\n");
                     break;
+                case TypeK:
+                    /*输出数据类型*/
+                    fprintf(listing, "Type: %s\n", tree->attr.name);
+                    break;
                 default:
                     fprintf(listing, "Unknown StmtNode kind\n");
                     break;
@@ -220,21 +234,13 @@ void printTree(TreeNode *tree) {
                     fprintf(listing, "Op: ");
                     printToken(tree->attr.op, "\0");
                     break;
-                case TypeK:
-                    /*输出数据类型*/
-                    fprintf(listing, "Type: %s\n", tree->attr.name);
-                    break;
                 case ConstNumK:
                     /*输出常数*/
                     fprintf(listing, "Const Integer: %d\n", tree->attr.val);
                     break;
                 case ConstStrK:
                     /*输出字符串*/
-                    if (strcmp(tree->attr.string, "Program") == 0)
-                        /*输出Program*/
-                        fprintf(listing, "%s\n", tree->attr.string);
-                    else
-                        fprintf(listing, "Const String: %s\n", tree->attr.string);
+                    fprintf(listing, "Const String: %s\n", tree->attr.string);
                     break;
                 case BoolK:
                     fprintf(listing, "Const Bool: %s\n", tree->attr.string);

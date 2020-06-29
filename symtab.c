@@ -7,16 +7,13 @@
 #include "symtab.h"
 
 static int hash(const char *key) {
+    int temp = 0;
     int i = 0;
-    unsigned int h = 0, g;
     while (key[i] != '\0') {
-        h = (h << 4u) + key[i];
-        if ((g = h & 0xf0000000)) {
-            h = h ^ (g >> 24u);
-            h = h ^ g;
-        }
+        temp = ((temp << 4) + key[i]) % SIZE;
+        ++i;
     }
-    return (int) h % SIZE;
+    return temp;
 }
 
 void symTabInsert(char *name, int lineno, int loc) {
@@ -32,6 +29,7 @@ void symTabInsert(char *name, int lineno, int loc) {
         bucketList->lines->lineno = lineno;
         bucketList->lines->next = NULL;
         bucketList->memloc = loc;
+        /*和原版不同*/
         bucketList->next = NULL;
         hashTable[index] = bucketList;
     } else {
