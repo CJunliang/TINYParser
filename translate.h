@@ -7,22 +7,21 @@
 
 /*存储四元组的数据结构*/
 typedef struct QuadrupleRec {
-    char *operator;
+    char *operator;/*操作符*/
     char *arg1;
     char *arg2;
-    char *result;
+    char *result;   /*结果*/
 } Quadruple;
-
-/*回填时使用的链接*/
+/*连接需要回填的逻辑地址*/
 typedef struct quaLinkList {
-    int index;
+    int index;/*逻辑地址下标*/
     struct quaLinkList *next;
 } QuaLinkList;
-
+/*返回时的数据结构*/
 typedef struct retStruct {
-    QuaLinkList *trueList;
-    QuaLinkList *falseList;
-    char *str;
+    QuaLinkList *trueList;/*真链*/
+    QuaLinkList *falseList;/*假链*/
+    char *str;/*其他信息如str、num和布尔类型*/
 } RetStruct;
 
 /*添加一个四元组*/

@@ -255,7 +255,7 @@ TreeNode *assign_stmt(void) {
                     t->child[0]->attr.string = copyString(tokenString);
                 match(STR);
                 break;
-            case NUM:
+            case NUM:/*num、id、true、false统一用布尔运算的or子程序识别*/
             case ID:
             case T_TRUE:
             case T_FALSE:
@@ -391,6 +391,8 @@ TreeNode *factor(void) {
     return t;
 }
 
+/*B->TB’ B’->and TB’|ε
+ * B->T(and T|ε)* */
 TreeNode *orTerm(void) {
     TreeNode *t = andTerm();
     while (token == OR) {
@@ -424,28 +426,28 @@ TreeNode *andTerm(void) {
 TreeNode *notTerm(void) {
     TreeNode *t = NULL;
     switch (token) {
-        case NOT:
+        case NOT:/*识别not*/
             t = newExpNode(OpK);
             t->attr.op = token;
             match(NOT);
             t->child[0] = notTerm();
             break;
-        case T_TRUE:
+        case T_TRUE:/*识别true*/
             t = newExpNode(BoolK);
             if ((t != NULL) && (token == T_TRUE))t->attr.string = copyString(tokenString);
             match(T_TRUE);
             break;
-        case T_FALSE:
+        case T_FALSE:/*识别false*/
             t = newExpNode(BoolK);
             if ((t != NULL) && (token == T_FALSE))t->attr.string = copyString(tokenString);
             match(T_FALSE);
             break;
-        case LPAREN:
+        case LPAREN:/*识别括号*/
             match(LPAREN);
             t = orTerm();
             match(RPAREN);
             break;
-        case NUM:
+        case NUM:/*识别变量和ID，调用表达式子程序*/
         case ID:
             t = expr();
             break;
