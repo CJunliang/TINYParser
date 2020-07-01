@@ -1,10 +1,10 @@
 {A sample TINY program}
 read x;
-if 0<x then
+if 0<x and not true or x>=2 then
 	fact:=1;	
 	repeat	
 		fact:=fact*x;	
 		x:=x-1;
-	until x=0;
+	until x=0 or fact<100;
 	write fact;
 end;

@@ -167,9 +167,7 @@ TreeNode *stmt_sequence(void) {
            (token != ELSE) && (token != UNTIL) && (token != WHILE)) {
         TreeNode *q;
         q = statement();
-        if (token != ENDFILE)
-            match(SEMI);
-        else break;
+        match(SEMI);
         if (q != NULL) {
             if (t == NULL) t = p = q;
             else /* now p cannot be NULL either */
@@ -235,7 +233,7 @@ TreeNode *repeat_stmt(void) {
     match(REPEAT);
     if (t != NULL) t->child[0] = stmt_sequence();
     match(UNTIL);
-    t->child[1] = expr();
+    t->child[1] = orTerm();
     return t;
 }
 

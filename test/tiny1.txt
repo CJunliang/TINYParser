@@ -1,0 +1,7 @@
+c:=true and false or true and not false;
+d:=a>4 and c>3 or b<d and not false;
+a:=true;
+b:=false;
+if true then
+    a:=1;
+end;

@@ -44,15 +44,15 @@ void addQuadruple(char *operator, char *arg1, char *arg2, char *result) {
 }
 
 /*输出四元组*/
-void printQuadruple() {
+void printQuadruple(FILE *file) {
     for (int i = 0; i < curIndex; i++) {
-        fprintf(code, "%3d:  %5s  ", i, quadruples[i].operator);
+        fprintf(file, "%3d:  %5s  ", i, quadruples[i].operator);
         if (quadruples[i].arg1 == NULL)
-            fprintf(code, "_,");
-        else fprintf(code, "%s,", quadruples[i].arg1);
+            fprintf(file, "_,");
+        else fprintf(file, "%s,", quadruples[i].arg1);
         if (quadruples[i].arg2 == NULL)
-            fprintf(code, "_,%s\n", quadruples[i].result);
-        else fprintf(code, "%s,%s\n", quadruples[i].arg2, quadruples[i].result);
+            fprintf(file, "_,%s\n", quadruples[i].result);
+        else fprintf(file, "%s,%s\n", quadruples[i].arg2, quadruples[i].result);
     }
 }
 
@@ -108,7 +108,9 @@ void codeGen(TreeNode *syntaxTree, char *codeFile) {
     emitComment(s);
     cGen(syntaxTree);
     addQuadruple("HALT", intToChar(0), intToChar(0), intToChar(0));
-    printQuadruple();
+    printQuadruple(code);
+    fprintf(listing, "\n\nQuadruple:\n");
+    printQuadruple(listing);
     emitComment("End of execution.");
 }
 
@@ -189,7 +191,7 @@ void genStmt(TreeNode *tree) {
                     backPatch(re->falseList, curIndex);
                 /*插入赋值四元式*/
                 addQuadruple(":=", re->str, NULL, tree->attr.name);
-            } else if (re->falseList != NULL && re->trueList != NULL) {
+            } else if (re->falseList != NULL || re->trueList != NULL) {
                 /*当真链和假链同时存在时，说明此时为布尔表达式*/
                 /*此时的逻辑地址为布尔表达式为true时的出口,新增一条赋值四元式
                  * 将true赋给变量,新增一条无条件跳转语句到赋值语句的末尾*/
